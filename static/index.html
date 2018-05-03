@@ -3,7 +3,6 @@
 <head>
     <style>
         #accounts > table {
-            width: 600px;
             margin: auto;
         }
         #accounts tr {
@@ -13,7 +12,7 @@
             border: 1px solid #888;
             text-align: right;
             margin: 0 2em;
-            max-width: 200px;
+            width: 200px;
             overflow: hidden;
         }
     </style>
@@ -26,8 +25,6 @@
 
     <a href="password.html">Set Password</a>
 
-    <a href="https://passwordsgenerator.net/sha256-hash-generator/" target="_blank">SHA256 Hash Generator</a>
-
     <div id="accounts"></div>
 
 
@@ -35,7 +32,6 @@
     <table>
         <tr>
             <th>Account</th>
-            <th>Password</th>
             <th>Balance</th>
         </tr>
     </table>
@@ -43,7 +39,6 @@
 <script type="text/html" id="account-template">
     <tr>
         <td name="id"></td>
-        <td name="password"></td>
         <td><span name="balance"></span>&nbsp;¤</td>
     </tr>
 </script>
