@@ -75,6 +75,7 @@ def on_join(channel_id):
     socketio.emit('accounts_data', {'accounts': accounts})
 
 if __name__ == '__main__':
+    import os
     accounts = json.load(open('data/accounts.json'))
-    socketio.run(app, host='0.0.0.0', port='9000')
+    socketio.run(app, host='0.0.0.0', port=(os.environ.get("PORT", "9000")))
 
