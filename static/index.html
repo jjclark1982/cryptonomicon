@@ -35,8 +35,8 @@
 </script>
 <script type="text/html" id="account-template">
     <tr>
-        <td name="id">aaa</td>
-        <td name="balance">bbb</td>
+        <td name="id"></td>
+        <td><span name="balance"></span>&nbsp;¤</td>
     </tr>
 </script>
 
@@ -55,6 +55,11 @@ function renderAccount(account) {
     setValues(row, account);
 }
 function renderAccounts(accounts) {
+    $$("[data-account-id]").forEach(function(row,i){
+        if (! accounts[row.getAttribute('data-account-id')]) {
+            row.remove();
+        }
+    });
     Object.keys(accounts).forEach(function(id) {
         renderAccount(accounts[id]);
     });

@@ -36,15 +36,25 @@ def update_accounts(transaction=None):
             writer = csv.writer(csvfile)
             writer.writerow(transaction)
 
+def normalize(acct_id):
+    acct_id = str(acct_id)
+    acct_id = re.sub(r'\s+', '', acct_id);
+    acct_id = re.sub(r'[^0-9a-zA-Z]', '', acct_id);
+    acct_id = acct_id[:32]
+    return acct_id
 
 @app.route('/api/cheque', methods=["POST"])
 def send_cheque():
     global accounts
-    from_acct = request.form['from_acct']
-    to_acct = request.form['to_acct']
+    from_acct = normalize(request.form['from_acct'])
+    to_acct = normalize(request.form['to_acct'])
     amount = float(request.form['amount'])
+    authorized = "authorized" in request.form
 
-    if amount <= 0:
+    if not authorized:
+        return "Error: transaction was not authorized"
+
+    if amount < 0:
         return "Error: amount was invalid"
 
     if accounts.get(from_acct, None) is None:
@@ -54,8 +64,6 @@ def send_cheque():
         return "Error: account '{from_acct}' does not have sufficient balance".format(**locals())
 
     if accounts.get(to_acct, None) is None:
-        if re.match(r'[^0-9a-zA-Z]', to_acct):
-            return "Error: invalid account id".format(**locals())
         accounts[to_acct] = {"id": to_acct, "balance": 0.0}
 
     accounts[from_acct]['balance'] -= amount

@@ -24,12 +24,18 @@
     <form id="cheque-form" method="POST" action="/api/cheque">
         <fieldset>
             Transfer 
-            <input type="number" name="amount">¤
+            <input type="number" name="amount"> ¤
             from account
             <input type="text" name="from_acct">
             to account
             <input type="text" name="to_acct">
-            <br>
+            <input type="hidden" name="authorized" value="1">
+            <!-- <p>
+                <label>
+                    <input type="checkbox" name="authorized"> I confirm that I am authorized to transfer from this account.
+                </label>
+            </p> -->
+            <br><br>
             <button type="submit">Send</button>
         </fieldset>
     </form>
@@ -40,7 +46,7 @@
     <script type="text/javascript" charset="utf-8">
         var socket = io.connect('http://' + document.domain + ':' + location.port);
         socket.on('connect', function() {
-            socket.emit('my event', {data: 'I\'m connected!'});
+            console.log("connected to socketio")
         });
 
         var chequeForm = document.getElementById("cheque-form");
