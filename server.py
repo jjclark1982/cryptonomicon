@@ -4,6 +4,7 @@ from flask import Flask, request, render_template, jsonify, redirect, send_from_
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room
 import json
+import csv
 
 app = Flask(__name__)
 CORS(app)
@@ -24,11 +25,16 @@ def serve_static(filename='index.html'):
 
 # REST API
 
-def update_accounts():
+def update_accounts(transaction=None):
     global accounts
     socketio.emit('accounts_data', {'accounts': accounts})
-    with open('accounts.json', 'w') as file:
-        json.dump(accounts, file, ensure_ascii=False, sort_keys=True, indent=2)
+    with open('accounts.json', 'w') as jsonfile:
+        json.dump(accounts, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
+    if transaction:
+        with open('transactions.csv', 'w+') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(transaction)
+
 
 @app.route('/api/cheque', methods=["POST"])
 def send_cheque():
@@ -49,7 +55,7 @@ def send_cheque():
     accounts[from_acct]['balance'] -= amount
     accounts[to_acct]['balance'] += amount
 
-    update_accounts()
+    update_accounts([from_acct, to_acct, amount])
 
     return redirect('/app/', code=302)
 
