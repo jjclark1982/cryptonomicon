@@ -6,6 +6,7 @@ from flask_socketio import SocketIO, join_room
 import json
 import csv
 import re
+import hashlib
 
 app = Flask(__name__)
 CORS(app)
@@ -43,10 +44,30 @@ def normalize(acct_id):
     acct_id = acct_id[:32]
     return acct_id
 
+def get_hash(password):
+    passhash = hashlib.sha256(password.encode('utf-8'))
+    return passhash.hexdigest()
+
+@app.route('/api/set_password', methods=["POST"])
+def set_password():
+    global accounts
+    acct = normalize(request.form['acct'])
+    password = request.form['password']
+
+    if accounts.get(acct, None) is None:
+        accounts[acct] = {"id": acct, "balance": 0.0}
+
+    accounts[acct]["password"] = get_hash(password)
+
+    update_accounts([])
+    return redirect('/app/', code=302)
+
+
 @app.route('/api/cheque', methods=["POST"])
 def send_cheque():
     global accounts
     from_acct = normalize(request.form['from_acct'])
+    password = request.form['password']
     to_acct = normalize(request.form['to_acct'])
     amount = float(request.form['amount'])
     authorized = "authorized" in request.form
@@ -60,6 +81,9 @@ def send_cheque():
     if accounts.get(from_acct, None) is None:
         return "Error: account '{from_acct}' does not exist".format(**locals())
 
+    if accounts.get(from_acct).get('password',None) != get_hash(password):
+        return "Error: password does not match".format(**locals())
+
     if accounts[from_acct]['balance'] < amount:
         return "Error: account '{from_acct}' does not have sufficient balance".format(**locals())
 
@@ -70,6 +94,7 @@ def send_cheque():
     accounts[to_acct]['balance'] += amount
 
     update_accounts([from_acct, to_acct, amount])
+    # TODO: include originating IP address and authorization signature
 
     return redirect('/app/', code=302)
 
