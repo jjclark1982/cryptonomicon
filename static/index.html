@@ -90,7 +90,7 @@ socket.on('connect', function() {
     socket.emit('new_client', {data: 'I\'m connected!'});
 });
 socket.on('accounts_data', function(data) {
-    updateAccounts(data.accounts);
+    renderAccounts(data.accounts);
 });
 
 </script>
