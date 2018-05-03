@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+    <style>
+        #cheque-form > fieldset {
+            display: inline-block;
+        }
+        #cheque-form textarea {
+            width: 30em;
+            height: 3em;
+        }
+        #cheque-form button {
+            float: right;
+        }
+        #cheque-form input[type=number] {
+            width: 6em;
+        }
+    </style>
+</head>
+<body>
+
+    <h3>Cryptonomicon</h3>
+
+    <h4>Make a transaction</h4>
+
+    <form id="cheque-form" method="POST" action="/api/cheque">
+        <fieldset>
+            Transfer 
+            <input type="number" name="amount">¤
+            from account
+            <input type="text" name="from_acct">
+            to account
+            <input type="text" name="to_acct">
+            <br>
+            <button type="submit">Send</button>
+        </fieldset>
+    </form>
+
+
+
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script type="text/javascript" charset="utf-8">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+        socket.on('connect', function() {
+            socket.emit('my event', {data: 'I\'m connected!'});
+        });
+
+        var chequeForm = document.getElementById("cheque-form");
+        chequeForm.onsubmit = function(event) {
+            // console.log("ok")
+            // event.preventDefault();
+        }
+    </script>
+</body>
+</html>
