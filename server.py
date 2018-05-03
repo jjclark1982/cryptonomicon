@@ -43,6 +43,9 @@ def send_cheque():
     to_acct = request.form['to_acct']
     amount = float(request.form['amount'])
 
+    if amount <= 0:
+        return "Error: amount was invalid"
+
     if accounts.get(from_acct, None) is None:
         return "Error: account '{from_acct}' does not exist".format(**locals())
 
