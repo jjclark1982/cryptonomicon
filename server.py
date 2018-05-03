@@ -25,7 +25,7 @@ def home():
 def serve_static(filename='index.html'):
     return send_from_directory(app.static_folder, filename)
 
-# REST API
+# utility functions
 
 def update_accounts(transaction=None):
     global accounts
@@ -47,6 +47,8 @@ def normalize(acct_id):
 def get_hash(password):
     passhash = hashlib.sha256(password.encode('utf-8'))
     return passhash.hexdigest()
+
+# REST API
 
 @app.route('/api/set_password', methods=["POST"])
 def set_password():
