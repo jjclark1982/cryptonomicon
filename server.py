@@ -28,10 +28,10 @@ def serve_static(filename='index.html'):
 def update_accounts(transaction=None):
     global accounts
     socketio.emit('accounts_data', {'accounts': accounts})
-    with open('accounts.json', 'w') as jsonfile:
+    with open('data/accounts.json', 'w') as jsonfile:
         json.dump(accounts, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
     if transaction:
-        with open('transactions.csv', 'w+') as csvfile:
+        with open('data/transactions.csv', 'w+') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(transaction)
 
@@ -75,6 +75,6 @@ def on_join(channel_id):
     socketio.emit('accounts_data', {'accounts': accounts})
 
 if __name__ == '__main__':
-    accounts = json.load(open('accounts.json'))
+    accounts = json.load(open('data/accounts.json'))
     socketio.run(app, host='0.0.0.0', port='9000')
 
