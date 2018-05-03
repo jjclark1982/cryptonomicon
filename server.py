@@ -31,7 +31,7 @@ def update_accounts(transaction=None):
     with open('data/accounts.json', 'w') as jsonfile:
         json.dump(accounts, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
     if transaction:
-        with open('data/transactions.csv', 'w+') as csvfile:
+        with open('data/transactions.csv', 'a') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(transaction)
 
