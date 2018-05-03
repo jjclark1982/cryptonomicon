@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO, join_room
 import json
 import csv
+import re
 
 app = Flask(__name__)
 CORS(app)
@@ -53,6 +54,8 @@ def send_cheque():
         return "Error: account '{from_acct}' does not have sufficient balance".format(**locals())
 
     if accounts.get(to_acct, None) is None:
+        if re.match(r'[^0-9a-zA-Z]', to_acct):
+            return "Error: invalid account id".format(**locals())
         accounts[to_acct] = {"id": to_acct, "balance": 0.0}
 
     accounts[from_acct]['balance'] -= amount
