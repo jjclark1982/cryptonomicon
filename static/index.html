@@ -11,8 +11,11 @@
         #accounts td {
             border: 1px solid #888;
             text-align: right;
-            margin: 0 2em;
-            width: 200px;
+            min-width: 125px;
+            padding: 0 0.5em;
+        }
+        td[name="password"] {
+            max-width: 100px;
             overflow: hidden;
         }
     </style>
@@ -32,6 +35,7 @@
     <table>
         <tr>
             <th>Account</th>
+            <!-- <th>Password</th> -->
             <th>Balance</th>
         </tr>
     </table>
@@ -39,6 +43,7 @@
 <script type="text/html" id="account-template">
     <tr>
         <td name="id"></td>
+        <!-- <td name="password"></td> -->
         <td><span name="balance"></span>&nbsp;¤</td>
     </tr>
 </script>
