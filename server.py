@@ -10,7 +10,7 @@ import hashlib
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, async_mode='threading', logger=True)
+socketio = SocketIO(app, async_mode='gevent', logger=True)
 accounts = {}
 jobs = {}
 
@@ -115,5 +115,5 @@ def on_join(channel_id):
 if __name__ == '__main__':
     import os
     accounts = json.load(open('data/accounts.json'))
-    socketio.run(app, host='0.0.0.0', port=(os.environ.get("PORT", "9000")))
+    socketio.run(app, host='0.0.0.0', port=int((os.environ.get("PORT", "9000"))))
 
