@@ -14,6 +14,8 @@ Download this project
 Install pip and download the dependencies for the server (you may want to do this in a virtualenv)
 
 ```shell
+    curl -O "https://bootstrap.pypa.io/get-pip.py"
+    python get-pip.py
     pip install -e .
 ```
 
