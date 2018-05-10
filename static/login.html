@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+    <title>Log In</title>
+    <style>
+        fieldset {
+            display: inline-block;
+        }
+    </style>
+    </head>
+<body>
+<form action="/api/login" method="POST">
+    <fieldset>
+        <p><label>Username: <input type="text" name="username"/></label></p>
+        <p><label>Password: <input type="password" name="password"/></label></p>
+        <p><input type="submit" value="Log In"/></p>
+    </fieldset>
+</form>  

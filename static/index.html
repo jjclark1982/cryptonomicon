@@ -18,6 +18,21 @@
             max-width: 100px;
             overflow: hidden;
         }
+        .login-box {
+            display: inline-block;
+        }
+        .login-box > .show-when-logged-out {
+            display: none;
+        }
+        .login-box[data-username="null"] > .show-when-logged-out {
+            display: inline-block;
+        }
+        .login-box > .show-when-logged-in {
+            display: inline-block;
+        }
+        .login-box[data-username="null"] > .show-when-logged-in {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -26,7 +41,15 @@
 
     <a href="cheque.html">Make a transaction</a>
 
-    <a href="password.html">Set Password</a>
+    <div class="login-box" name="current_username" data-target="data-username" data-username="null">
+        <span class="show-when-logged-out">
+            <a href="login.html">Log In</a>
+        </span>
+        <span class="show-when-logged-in">
+            <span class="current-username">Logged in as <span name="current_username"></span>.</span>
+            <form class="logout-form" style="display:inline" action="/api/logout" method="POST"><button>Log Out</button></form>
+        </span>
+    </div>
 
     <div id="accounts"></div>
 
@@ -89,6 +112,15 @@ function updateAccounts() {
 }
 // setInterval(updateAccounts, 1000);
 // updateAccounts();
+function updateUsername() {
+    fetch('/api/username', {credentials: 'include'}).then(function(response){
+        return response.json();
+    })
+    .then(function(username){
+        setValues(document.body, {current_username: username});
+    });
+}
+updateUsername();
 
 var socket = io.connect('http://' + document.domain + ':' + location.port);
 socket.on('connect', function() {
@@ -96,6 +128,9 @@ socket.on('connect', function() {
 });
 socket.on('accounts_data', function(data) {
     renderAccounts(data.accounts);
+});
+socket.on('session_info', function(data) {
+    console.log("session info", data)
 });
 
 </script>

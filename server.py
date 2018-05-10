@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 
-from flask import Flask, request, render_template, jsonify, redirect, send_from_directory
+from flask import Flask, session, request, render_template, jsonify, redirect, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO, join_room
 import json
 import csv
 import re
 import hashlib
+import os
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY")
 CORS(app)
 socketio = SocketIO(app, async_mode='gevent', logger=True)
+branches = {}
 accounts = {}
-jobs = {}
 
 # serve static files
 
@@ -48,7 +50,32 @@ def get_hash(password):
     passhash = hashlib.sha256(password.encode('utf-8'))
     return passhash.hexdigest()
 
-# REST API
+# RPC API
+
+@app.route('/api/login', methods=["POST"])
+def login():
+    username = request.form['username']
+    password = request.form['password']
+    if username not in accounts:
+        return redirect("/app/password.html", code=302)
+    account = accounts[username]
+    if get_hash(password) != account["password"]:
+        return "incorrect password"
+
+    session['username'] = username
+    print("setting username", session)
+    return redirect('/app/', code=302)
+
+@app.route('/api/logout', methods=["POST"])
+def logout():
+   # remove the username from the session if it is there
+   session.pop('username', None)
+   return redirect('/app/')
+
+@app.route('/api/username')
+def username():
+    print("getting username", session)
+    return jsonify(session.get('username', None))
 
 @app.route('/api/set_password', methods=["POST"])
 def set_password():
@@ -102,15 +129,20 @@ def send_cheque():
 
 @app.route('/api/accounts')
 def get_accounts():
-    global accounts
-    return jsonify(accounts)
+    branch_id = request.args.get('branch_id', None)
+    if branch_id:
+        return jsonify(branches[branch_id])
+    else:
+        return jsonify(accounts)
 
 # streaming API
 
 @socketio.on('new_client')
-def on_join(channel_id):
-    global accounts
+def new_client(message):
+    # note that session is available
     socketio.emit('accounts_data', {'accounts': accounts})
+
+# main routine
 
 if __name__ == '__main__':
     import os
