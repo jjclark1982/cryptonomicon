@@ -1,6 +1,7 @@
 <!doctype html>
 <html>
 <head>
+    <title>Cryptonomicon</title>
     <style>
         #accounts > table {
             margin: auto;
@@ -39,7 +40,7 @@
 
     <h3>Cryptonomicon</h3>
 
-    <a href="cheque.html">Make a transaction</a>
+    <a href="password.html">Set Password</a>
 
     <div class="login-box" name="current_username" data-target="data-username" data-username="null">
         <span class="show-when-logged-out">
@@ -48,8 +49,18 @@
         <span class="show-when-logged-in">
             <span class="current-username">Logged in as <span name="current_username"></span>.</span>
             <form class="logout-form" style="display:inline" action="/api/logout" method="POST"><button>Log Out</button></form>
+            <span name="total_money"></span>
         </span>
     </div>
+
+    <p><a href="cheque.html">Make a transaction</a></p>
+
+    <p>
+        <a href=".">Wallet</a>
+        <a href="?branch=A">Branch A</a>
+        <a href="?branch=B">Branch B</a>
+        <a href="?branch=Q">Branch Q</a>
+    </p>
 
     <div id="accounts"></div>
 
@@ -57,9 +68,9 @@
 <script type="text/html" id="table-template">
     <table>
         <tr>
-            <th>Account</th>
+            <th>User ID</th>
             <!-- <th>Password</th> -->
-            <th>Balance</th>
+            <th><span name="branch_id">Wallet</span> Balance</th>
         </tr>
     </table>
 </script>
@@ -75,6 +86,21 @@
 <script type="text/javascript" src="fetch.js"></script>
 <script type="text/javascript" src="lib.js"></script>
 <script>
+function normalize_branch_id(branch_id) {
+    if (!branch_id) {
+        return "Wallet";
+    }
+    else if (branch_id == "Wallet") {
+        return "Wallet";
+    }
+    else {
+        return "Branch "+branch_id;
+    }
+}
+
+var branch_id = parseQuery(document.location.search).branch || "Wallet";
+setValues(document.body, {branch_id: normalize_branch_id(branch_id)});
+
 function renderAccount(account) {
     var row = $("[data-account-id='"+account.id+"']");
     if (!row) {
@@ -86,6 +112,7 @@ function renderAccount(account) {
     setValues(row, account);
 }
 function renderAccounts(accounts) {
+    accounts = accounts || {};
     $$("[data-account-id]").forEach(function(row,i){
         var rowId = row.getAttribute('data-account-id');
         if (typeof accounts[rowId] === 'undefined') {
@@ -95,6 +122,7 @@ function renderAccounts(accounts) {
     Object.keys(accounts).forEach(function(id) {
         renderAccount(accounts[id]);
     });
+    setValues(document.body, {branch_id: normalize_branch_id(branch_id)});
 }
 (function(){
     var table = render($('#table-template'));
@@ -103,7 +131,7 @@ function renderAccounts(accounts) {
 
 })();
 function updateAccounts() {
-    fetch('/api/accounts').then(function(response){
+    fetch('/api/accounts'+document.location.search).then(function(response){
         return response.json();
     })
     .then(function(accountsData){
@@ -118,6 +146,12 @@ function updateUsername() {
     })
     .then(function(username){
         setValues(document.body, {current_username: username});
+        fetch('/api/total_money?username='+username).then(function(response){
+            return response.text();
+        })
+        .then(function(money){
+            setValues(document.body, {total_money: money});
+        });
     });
 }
 updateUsername();
@@ -126,11 +160,11 @@ var socket = io.connect('http://' + document.domain + ':' + location.port);
 socket.on('connect', function() {
     socket.emit('new_client', {data: 'I\'m connected!'});
 });
-socket.on('accounts_data', function(data) {
-    renderAccounts(data.accounts);
-});
-socket.on('session_info', function(data) {
-    console.log("session info", data)
+// socket.on('accounts_data', function(data) {
+//     renderAccounts(data.accounts);
+// });
+socket.on('branch_data', function(data) {
+    renderAccounts(data.branches[branch_id]);
 });
 
 </script>

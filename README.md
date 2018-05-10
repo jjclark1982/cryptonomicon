@@ -49,3 +49,9 @@ It will display a table of accounts, based on the data in `data/accounts.json`. 
 Then go to the [Set Password](http://localhost:9000/app/password.html) link to set the password from this account.
 
 Once it has a password, you can go to the [Make a transaction](http://localhost:9000/app/cheque.html) link to send funds to other accounts. Recipient accounts will be created automatically.
+
+### TODO
+
+- multiple bank branches √
+- sessions have wallets √
+- after you transact with a branch, it takes time to sync

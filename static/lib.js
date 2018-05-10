@@ -1,5 +1,6 @@
 var $ = document.querySelector.bind(document);
 var $$ = document.querySelectorAll.bind(document);
+
 function setValue(el, value) {
     // TODO: consider supporting 'data-index' for compound values
     // TODO: change 'data-target' to 'data-value-attr'?
@@ -44,6 +45,7 @@ function setValue(el, value) {
         }
     }
 }
+
 function setValues(el, context) {
     Object.keys(context).forEach(function(name){
         var value = context[name];
@@ -57,6 +59,7 @@ function setValues(el, context) {
         }
     });
 }
+
 function render(template, context) {
     template = template || '';
     context = context ||  {};
@@ -77,4 +80,20 @@ function render(template, context) {
     setValues(el, context);
 
     return el;
+}
+
+function parseQuery(query) {
+    query = query.replace(/^\?|\/$/g,'');
+    var items = query.split('&');
+    var obj = {};
+    items.forEach(function(item){
+        var parts = item.split('=');
+        var key = decodeURIComponent(parts[0]);
+        var value = decodeURIComponent(parts[1]);
+        if (value.match(/,/)) {
+            value = value.split(/,/);
+        }
+        obj[key] = value;
+    });
+    return obj;
 }
