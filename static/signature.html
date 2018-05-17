@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        form > fieldset {
+            display: inline-block;
+            text-align: right;
+        }
+        form label {
+            vertical-align: top;
+        }
+        form input {
+            width: 30em;
+        }
+        form textarea {
+            width: 30em;
+            height: 3em;
+        }
+        form input[type=number] {
+            width: 6em;
+        }
+    </style>
+</head>
+<body>
+
+    <h3><a href=".">Cryptonomicon</a> &gt; Digital Signature</h4>
+
+    <form id="sign-form">
+        <fieldset>
+            <label>
+                Message:
+                <textarea name="message">Hello</textarea>
+            </label>
+            <br>
+            <label>
+                Code: 
+                <input name="code" value="A">
+            </label>
+            <p style="text-align: center">
+                <button type="submit" value="encode">Encode</button>
+                &nbsp; &nbsp;
+                <button type="submit" value="decode">Decode</button>
+            </p>
+            <label>
+                Result:
+                <textarea name="result"></textarea>
+            </label>
+        </fieldset>
+    </form>
+
+    <script type="text/javascript" src="socket.io.min.js"></script>
+    <script type="text/javascript" src="fetch.js"></script>
+    <script type="text/javascript" src="lib.js"></script>
+    <script type="text/javascript">
+var socket = io.connect('http://' + document.domain + ':' + location.port);
+socket.on('connect', function() {
+    // console.log("connected to socketio")
+});
+
+function getCode(chars, operation) {
+    chars = chars || 'A';
+    return chars.split('').map(function(char, i) {
+        var code = (char.charCodeAt(0) - 'A'.charCodeAt(0));
+        if (operation === "decode") {
+            return code;
+        }
+        else {
+            return -code;
+        }
+    });
+}
+function getReverseCode(code) {
+    code = code || 'A';
+    return code.split('').map(function(char, i) {
+        return ('A'.charCodeAt(0) - char.charCodeAt(0));
+    });
+}
+function encode(message, code) {
+    message = message || '';
+    code = code || [0];
+    var chars = message.split('');
+    var encoded = chars.map(function(char, i) {
+        var charCode = char.charCodeAt(0);
+        var offset = code[i % code.length];
+        return String.fromCharCode(charCode + offset);
+    });
+    return encoded.join('');
+}
+
+$("#sign-form").onclick = function(event) {
+    event.target.setAttribute('data-clicked', true);
+}
+$("#sign-form").onsubmit = function(event) {
+    event.preventDefault();
+    var values = getValues(event.target);
+    var operation = event.target.querySelector('[data-clicked]').value;
+    var unclick = event.target.querySelectorAll('[data-clicked]')
+    for (var i = 0; i < unclick.length; i++) {
+        unclick[i].removeAttribute('data-clicked');
+    }
+    // console.log("values:", values, operation);
+
+    var code = getCode(values.code, operation)
+    values.result = encode(values.message, code);
+    setValues(event.target, values);
+}
+    </script>
+</body>
+</html>

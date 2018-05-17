@@ -1,20 +1,48 @@
 var $ = document.querySelector.bind(document);
 var $$ = document.querySelectorAll.bind(document);
 
+
+function getValue(el) {
+    // this function is the counterpart to setValue(),
+    // but it only needs to support user-editable elements
+    // TODO: support other input types such as radio
+    var value = el.value;
+    if (el.type == 'checkbox') {
+        value = el.checked;
+    }
+    if (value && value.match(/,/)) {
+        value = value.split(/,/);
+    }
+    return value;
+}
+
+function getValues(el) {
+    var values = {};
+    var fields = el.querySelectorAll('[name]');
+    for (var i = 0; i < fields.length; i++) {
+        var field = fields[i];
+        values[field.name] = getValue(field);
+    }
+    return values;
+}
+
 function setValue(el, value) {
     // TODO: consider supporting 'data-index' for compound values
     // TODO: change 'data-target' to 'data-value-attr'?
     // TODO: support compound 'data-target' with commas?
     var target = el.getAttribute('data-target') || 'value';
-    if (target == 'value') {
+    if (target === 'value') {
         // when no 'data-target' is given, set the 'value' which varies by tag
-        if (el.tagName == 'INPUT') {
-            if (el.type == 'checkbox') {
+        if (el.tagName === 'INPUT') {
+            if (el.type === 'checkbox') {
                 el.checked = !!value;
             }
             else {
                 el.value = value;
             }
+        }
+        else if (el.tagName === 'button') {
+            return
         }
         else {
             if ('textContent' in el) {
@@ -27,7 +55,7 @@ function setValue(el, value) {
     }
     else {
         var parts = target.split('.');
-        if (parts.length == 1) {
+        if (parts.length === 1) {
             // when some 'data-target' is given, set that attribute
             // e.g.: <name="banner_size" data-target="width"> would run
             //       el.width = value;
