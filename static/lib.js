@@ -10,6 +10,10 @@ function getValue(el) {
     if (el.type == 'checkbox') {
         value = el.checked;
     }
+    if (el.tagName == 'TEXTAREA' && Array.isArray(value)) {
+        value = value.join('');
+        return value;
+    }
     if (value && value.match(/,/)) {
         value = value.split(/,/);
     }

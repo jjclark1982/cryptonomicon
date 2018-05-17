@@ -7,6 +7,9 @@
             display: inline-block;
             text-align: right;
         }
+        form legend {
+            text-align: center;
+        }
         form label {
             vertical-align: top;
         }
@@ -18,7 +21,10 @@
             height: 3em;
         }
         form input[type=number] {
-            width: 6em;
+            width: 3em;
+        }
+        pre {
+            text-align: left;
         }
     </style>
 </head>
@@ -26,15 +32,20 @@
 
     <h3><a href=".">Cryptonomicon</a> &gt; Digital Signature</h4>
 
-    <form id="sign-form">
+    <p><a href="https://www.cs.cmu.edu/~pattis/15-1XX/common/handouts/ascii.html">character code table</a></p>
+
+    <form id="sign-form" autocomplete="off">
         <fieldset>
+            <legend>Encoder</legend>
             <label>
                 Message:
-                <textarea name="message">Hello</textarea>
+                <textarea name="message">
+Y¤nD©)}D©wDD|D}¦DxR~¦RnnD D}Rx¥r¦)Rj¢n¥RwD¡¤nR¦)Rj¢«DjRm)¡©DkR)¦`DU¦RqRjR{R¦nDmD§)nD{Y)nD{R~¦RrRwR)¢R<<m}K¥RxR RxD¢yRxD§pR©jY¥D{)¤R{ R)t¡uRRn uRnR|wD ))Rr¦nRmD Dw¦wR{R¦jR)))¡ r¤D{) D¡ 7.<{)¥D}Rn¦RoD¦nR)¥D}Rx¥¦DxR¦v¥R}D©)DjRoD©mR}D©)DjRoD¡u¥n¥R}D©)Dn¡)Rn)¦RjR¦nD¢lR¡) n§}R)¥D}Rn¥¡)Rpr¦DrR©|D¦)xR¡)h¤w¥¥DrR©|D¦)¢¤wR¡)¡¢)¦RjR¦nD©}¤RoDy¤
+                </textarea>
             </label>
             <br>
             <label>
-                Code: 
+                Key: 
                 <input name="code" value="A">
             </label>
             <p style="text-align: center">
@@ -49,6 +60,32 @@
         </fieldset>
     </form>
 
+    <form id="freq-form" autocomplete="off">
+        <fieldset>
+            <legend>Frequency Calculator</legend>
+            <label>
+                <input type="number" name="length" value="1">
+            </label>n +
+            <label>
+                <input type="number" name="offset" value="0">
+            </label>
+            <button onclick="computeFrequencies()">Compute Frequencies</button>
+                <pre id="frequencies">
+                </pre>
+        </fieldset>
+    </form>
+
+    <form id="ioc-form" autocomplete="off">
+        <fieldset>
+            <legend>Index of Coincidence</legend>
+            <label>
+                Length:
+                <input type="number" name="length" value="1">
+            </label>n
+            <button type="submit">Compute Index</button>
+            <div id="ioc-result"></div>
+        </fieldset>
+    </form>
     <script type="text/javascript" src="socket.io.min.js"></script>
     <script type="text/javascript" src="fetch.js"></script>
     <script type="text/javascript" src="lib.js"></script>
@@ -63,10 +100,10 @@ function getCode(chars, operation) {
     return chars.split('').map(function(char, i) {
         var code = (char.charCodeAt(0) - 'A'.charCodeAt(0));
         if (operation === "decode") {
-            return code;
+            return -code;
         }
         else {
-            return -code;
+            return code;
         }
     });
 }
@@ -78,6 +115,9 @@ function getReverseCode(code) {
 }
 function encode(message, code) {
     message = message || '';
+    if (Array.isArray(message)) {
+        message = message.join('');    
+    }
     code = code || [0];
     var chars = message.split('');
     var encoded = chars.map(function(char, i) {
@@ -89,7 +129,9 @@ function encode(message, code) {
 }
 
 $("#sign-form").onclick = function(event) {
-    event.target.setAttribute('data-clicked', true);
+    if (event.target.tagName === "BUTTON") {
+        event.target.setAttribute('data-clicked', true);
+    }
 }
 $("#sign-form").onsubmit = function(event) {
     event.preventDefault();
@@ -105,6 +147,71 @@ $("#sign-form").onsubmit = function(event) {
     values.result = encode(values.message, code);
     setValues(event.target, values);
 }
-    </script>
+$("#freq-form").onsubmit = function(event) {
+    event.preventDefault();
+    computeFrequencies(event.target);
+}
+function computeFrequencies(form) {
+    form = form || $("#freq-form");
+    var values = getValues(form);
+    var message = $('[name="message"]').value;
+    if (Array.isArray(message)) {
+        message = message.join('');    
+    }
+    var chars = {};
+    var length = parseInt(values.length);
+    var offset = parseInt(values.offset)
+    message.split('').forEach(function(char, i){
+        if (i % length === offset) {
+            chars[char] = (chars[char] || 0) + 1;
+        }
+    });
+    var sortable = [];
+    for (var i in chars) {
+        sortable.push([i, chars[i]]);
+    }
+    sortable.sort(function(a, b) {
+        return b[1] - a[1];
+    });
+    var result = "";
+    for (var i in sortable) {
+        result += JSON.stringify(sortable[i])
+        result += "\n"
+    }
+    $("#frequencies").innerHTML = result;
+}
+
+$("#ioc-form").onsubmit = function(event) {
+    event.preventDefault();
+    computeIoC(event.target);
+}
+function computeIoC(form) {
+    form = form || $("#freq-form");
+    var values = getValues(form);
+    var message = $('[name="message"]').value;
+    if (Array.isArray(message)) {
+        message = message.join('');    
+    }
+    var keyLength = parseInt(values.length);
+
+    var attempts = 0;
+    var matches = 0;
+
+    for (var i = 0; i < message.length; i++) {
+        var char1 = message.charCodeAt(i);
+        for (var j = i; j < message.length; j += keyLength) {
+            var char2 = message.charCodeAt(j);
+            attempts += 1;
+            if (char1 === char2) {
+                matches += 1;
+            }
+        }
+    }
+
+    var ioc = (matches / attempts)*100;
+    $("#ioc-result").innerHTML = "index: "+ioc.toFixed(2)+"%"
+}
+
+</script>
 </body>
 </html>
