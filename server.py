@@ -221,6 +221,11 @@ def new_client(message):
     socketio.emit('accounts_data', {'accounts': accounts})
     socketio.emit('branch_data', {'branches': branches})
 
+
+@socketio.on('send_message')
+def post_message(message):
+    socketio.emit('rcv_message', message)
+
 True
 
 # main routine

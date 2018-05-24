@@ -30,7 +30,7 @@
 </head>
 <body>
 
-    <h3><a href=".">Cryptonomicon</a> &gt; Digital Signature</h4>
+    <h3><a href=".">Cryptonomicon</a> &gt; Digital Signature</h3>
 
     <p><a href="https://www.cs.cmu.edu/~pattis/15-1XX/common/handouts/ascii.html">character code table</a></p>
 
@@ -175,8 +175,11 @@ function computeFrequencies(form) {
     });
     var result = "";
     for (var i in sortable) {
-        result += JSON.stringify(sortable[i])
-        result += "\n"
+        result += JSON.stringify(sortable[i]);
+        var guess = sortable[i][0].charCodeAt(0) - " ".charCodeAt(0);
+        guess = encode("A", [guess]);
+        result += " (guess: "+guess+")";
+        result += "\n";
     }
     $("#frequencies").innerHTML = result;
 }
@@ -193,6 +196,9 @@ function computeIoC(form) {
         message = message.join('');    
     }
     var keyLength = parseInt(values.length);
+    if (keyLength < 1) {
+        return null
+    }
 
     var attempts = 0;
     var matches = 0;

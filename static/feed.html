@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+    <title>Cryptonomicon</title>
+    <style>
+        form {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<form id="message-form" autocomplete="off">
+    <fieldset>
+        <input name="message" type="text">
+        <button>Post</button>
+    </fieldset>
+</form>
+
+<div id="feed">
+</div>
+
+
+<script type="text/javascript" src="socket.io.min.js"></script>
+<script type="text/javascript" src="fetch.js"></script>
+<script type="text/javascript" src="lib.js"></script>
+<script>
+function postMessage(message){
+    var feedDiv = $("#feed");
+    var el = document.createElement("p")
+    el.innerHTML = message.data;
+    feedDiv.prepend(el);
+    while (feedDiv.childNodes.length > 100) {
+        feedDiv.lastChild.remove();
+    }
+}
+
+var socket = io.connect('http://' + document.domain + ':' + location.port);
+socket.on('connect', function() {
+    socket.emit('new_client', {data: 'I\'m connected!'});
+});
+socket.on('rcv_message', function(data) {
+    postMessage(data);
+});
+
+$("#message-form").onsubmit = function(event) {
+    event.preventDefault();
+    var message = $('[name="message"]').value;
+    if (message) {
+        socket.emit('send_message', {data: message})
+        $('[name="message"]').value = '';
+    }
+}
+
+</script>
+</body>
+</html>
