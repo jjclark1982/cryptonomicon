@@ -14,9 +14,9 @@ function getValue(el) {
         value = value.join('');
         return value;
     }
-    if (value && value.match(/,/)) {
-        value = value.split(/,/);
-    }
+    // if (value && value.match(/,/)) {
+    //     value = value.split(/,/);
+    // }
     return value;
 }
 

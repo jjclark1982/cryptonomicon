@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        form > fieldset {
+            display: inline-block;
+            text-align: right;
+        }
+        form legend {
+            text-align: center;
+        }
+        form label {
+            vertical-align: top;
+        }
+        form input {
+            width: 30em;
+        }
+        form textarea {
+            width: 30em;
+            height: 3em;
+        }
+        form input[type=number] {
+            width: 3em;
+        }
+        form input.big-num {
+            width: 6em;
+        }
+        pre {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h3><a href=".">Cryptonomicon</a> &gt; Key-pair Cryptography</h3>
+
+    <form id="key-form" autocomplete="off">
+        <fieldset>
+            <legend>Generate Key Pair</legend>
+            <label>
+                Bits:
+                <input name="bits" type="number" value="16">
+            </label>
+            <button>Generate</button>
+            <br><br>
+            <label>
+                Public key <var>n</var>:
+                <input name="n" class="big-num">
+            </label>
+            <br>
+            <label>
+                Public key <var>e</var>:
+                <input name="e" class="big-num">
+            </label>
+            <br>
+            <label>
+                Private key <var>d</var>:
+                <input name="d" class="big-num" disabled>
+            </label>
+        </fieldset>
+    </form>
+
+    <form id="encode-form" autocomplete="off">
+        <fieldset>
+            <legend>Encoder</legend>
+            <label>
+                Plaintext:
+                <textarea name="message">Hello, World!</textarea>
+            </label>
+            <p style="text-align: center">
+                <button type="button" id="encode-button">↓ Encrypt ↓</button>
+                &nbsp; &nbsp;
+                <button type="button" id="decode-button">↑ Decrypt ↑</button>
+                <!-- &nbsp; &nbsp;
+                <button type="submit" value="test" id="test-button">Test</button> -->
+            </p>
+            <label>
+                Cryptext:
+                <textarea name="result"></textarea>
+            </label>
+            <button type="button" id="post-button">Post to feed</button>
+        </fieldset>
+    </form>
+
+    <script type="text/javascript" src="socket.io.min.js"></script>
+    <script type="text/javascript" src="fetch.js"></script>
+    <script type="text/javascript" src="BigInteger.js"></script>
+    <script type="text/javascript" src="RSA.js"></script>
+    <script type="text/javascript" src="lib.js"></script>
+<script>
+function stringToNums(str) {
+    return str.split('').map(function(c){
+        return c.charCodeAt(0)
+    });
+}
+function numsToBigInt(nums) {
+    var numstring = nums.map(function(num){
+        return "<"+num+">";
+    }).join('');
+    return bigInt(numstring, 256);
+}
+function bigIntToNums(n) {
+    var nums = n.toArray(256).value;
+    return nums;
+}
+function numsToString(nums) {
+    return nums.map(function(num){
+        return String.fromCharCode(num);
+    }).join('');
+}
+
+$("#key-form").onsubmit = function(event) {
+    event.preventDefault();
+    generateKey(event.target);
+}
+function generateKey(form) {
+    var values = getValues(form);
+    var bits = parseInt(values.bits);
+    if (bits < 4 || bits > 1024) {
+        setValues(form, {bits:16});
+        return;
+    }
+    var key = RSA.generate(values.bits);
+    window.sharedKey = key;
+    setValues(form, key);
+}
+generateKey($("#key-form"));
+
+$("#encode-button").onclick = function(event) {
+    event.preventDefault();
+    encodeMessage($("#encode-form"));
+}
+function encodeMessage(form) {
+    var values = getValues(form);
+    var key = window.sharedKey;
+    key = getValues($("#key-form"));
+    var plaintext = stringToNums(values.message);
+    var cryptext = plaintext.map(function(n){
+        return RSA.encrypt(n, key.n, key.e);
+    });
+    values.result = numsToString(cryptext);
+    setValues(form, values);
+}
+$("#decode-button").onclick = function(event) {
+    event.preventDefault();
+    decodeMessage($("#encode-form"));
+}
+function decodeMessage(form) {
+    var values = getValues(form);
+    var key = window.sharedKey;
+    key = getValues($("#key-form"));
+    var cryptext = stringToNums(values.result);
+    window.cryptext = cryptext;
+    var plaintext = cryptext.map(function(n){
+        return RSA.decrypt(n, key.d, key.n).value;
+    });
+    window.plaintext = plaintext;
+    window.values = values
+    values.message = numsToString(plaintext);
+    $("[name=message]").value = numsToString(plaintext);
+}
+// $("#test-button").onclick = function(event) {
+//     event.preventDefault();
+//     testMessage($("#encode-form"));
+// }
+// function testMessage(form) {
+//     var values = getValues(form);
+//     var key = window.sharedKey; // or read from other form
+//     var message = numsToBigInt(stringToNums(values.message));
+//     var result = numsToString(bigIntToNums(message));
+//     values.result = result;
+//     setValues(form, values);
+// }
+</script>
+</body>
+</html>

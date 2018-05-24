@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "big-integer": "^1.6.28",
     "socket.io-client": "<2.0.0",
     "whatwg-fetch": "^2.0.4"
   }
