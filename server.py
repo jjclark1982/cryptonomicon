@@ -213,6 +213,26 @@ def get_accounts():
 def get_branches():
     return jsonify(branches)
  
+# DHT API
+
+hash_table = {}
+
+@app.route('/api/dht/<path:key>', methods=["GET", "PUT"])
+def dht_value(key):
+    if request.method == "PUT":
+        value = str(request.data.decode("utf-8", "strict"))
+        hash_table[key] = value
+    if request.method == "GET":
+        value = hash_table[key]
+    with open('data/hash_table.json', 'w') as jsonfile:
+        json.dump(hash_table, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
+    return jsonify({"value":value})
+
+@app.route('/api/dht', methods=["GET"])
+def dht_dump():
+    return jsonify(hash_table)
+
+
 # streaming API
 
 @socketio.on('new_client')
@@ -226,8 +246,6 @@ def new_client(message):
 def post_message(message):
     socketio.emit('rcv_message', message)
 
-True
-
 # main routine
 
 if __name__ == '__main__':
@@ -240,6 +258,10 @@ if __name__ == '__main__':
         branches = json.load(open('data/branches.json'))
     except FileNotFoundError:
         branches = {"Wallet": accounts}
+    try:
+        hash_table = json.load(open('data/hash_table.json'))
+    except FileNotFoundError:
+        hash_table = {}
     socketio.run(app, host='0.0.0.0', port=int((os.environ.get("PORT", "9000"))))
 
 print(accounts)

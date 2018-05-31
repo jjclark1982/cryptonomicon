@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <title>RSA</title>
     <style>
         form > fieldset {
             display: inline-block;
@@ -48,15 +49,16 @@
                 Public key <var>n</var>:
                 <input name="n" class="big-num">
             </label>
+            <button id="post-key-button" style="position:absolute; display: none">Post to DHT</button>
             <br>
             <label>
                 Public key <var>e</var>:
-                <input name="e" class="big-num">
+                <input name="e" class="big-num" disabled>
             </label>
             <br>
             <label>
                 Private key <var>d</var>:
-                <input name="d" class="big-num" disabled>
+                <input name="d" class="big-num">
             </label>
         </fieldset>
     </form>
@@ -79,9 +81,12 @@
                 Cryptext:
                 <textarea name="result"></textarea>
             </label>
+            <br>
             <button type="button" id="post-button">Post to feed</button>
         </fieldset>
     </form>
+
+    <div id="feed"></div>
 
     <script type="text/javascript" src="socket.io.min.js"></script>
     <script type="text/javascript" src="fetch.js"></script>
@@ -136,8 +141,8 @@ function encodeMessage(form) {
     var key = window.sharedKey;
     key = getValues($("#key-form"));
     var plaintext = stringToNums(values.message);
-    var cryptext = plaintext.map(function(n){
-        return RSA.encrypt(n, key.n, key.e);
+    var cryptext = plaintext.map(function(char){
+        return RSA.encrypt(char, key.n, key.e);
     });
     values.result = numsToString(cryptext);
     setValues(form, values);
@@ -152,8 +157,8 @@ function decodeMessage(form) {
     key = getValues($("#key-form"));
     var cryptext = stringToNums(values.result);
     window.cryptext = cryptext;
-    var plaintext = cryptext.map(function(n){
-        return RSA.decrypt(n, key.d, key.n).value;
+    var plaintext = cryptext.map(function(char){
+        return RSA.decrypt(char, key.d, key.n).value;
     });
     window.plaintext = plaintext;
     window.values = values
@@ -172,6 +177,37 @@ function decodeMessage(form) {
 //     values.result = result;
 //     setValues(form, values);
 // }
+function postMessage(message){
+    var feedDiv = $("#feed");
+    var el = document.createElement("p")
+    el.innerHTML = message.data;
+    feedDiv.prepend(el);
+    while (feedDiv.childNodes.length > 10) {
+        feedDiv.lastChild.remove();
+    }
+}
+
+var socket = io.connect('http://' + document.domain + ':' + location.port);
+socket.on('connect', function() {
+    socket.emit('new_client', {data: 'I\'m connected!'});
+});
+socket.on('rcv_message', function(data) {
+    postMessage(data);
+});
+
+$("#post-button").onclick = function(event) {
+    event.preventDefault();
+    var message = $('[name="result"]').value;
+    if (message) {
+        socket.emit('send_message', {data: message})
+        $('[name="result"]').value = '';
+    }
+}
+
+$("#post-key-button").onclick = function(event) {
+    event.preventDefault();
+    // TODO: copy code from DHT page
+}
 </script>
 </body>
 </html>

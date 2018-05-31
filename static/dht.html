@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>DHT</title>
+    <style>
+        form > fieldset {
+            display: inline-block;
+            text-align: right;
+        }
+        form legend {
+            text-align: center;
+        }
+        form label {
+            vertical-align: top;
+        }
+        form input {
+            width: 30em;
+        }
+        form textarea {
+            width: 30em;
+            height: 3em;
+        }
+        form input[type=number] {
+            width: 3em;
+        }
+        form input.big-num {
+            width: 6em;
+        }
+        pre {
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <h3><a href=".">Cryptonomicon</a> &gt; Distributed Hash Table</h3>
+
+    <form id="dht-form" autocomplete="off">
+        <fieldset>
+            <legend>Distributed Hash Table</legend>
+            <label>
+                Key:
+                <input name="key" type="text">
+            </label>
+            <p style="text-align:center">
+                <button type="button" id="hash-button">↑ Generate Hash ↑</button> &nbsp;
+                <button type="button" id="set-button">↓ Set ↓</button> &nbsp;
+                <button type="button" id="get-button">↓ Get ↓</button>
+            </p>
+            <label>
+                Value:
+                <textarea name="value"></textarea>
+            </label>
+       </fieldset>
+    </form>
+
+    <script type="text/javascript" src="socket.io.min.js"></script>
+    <script type="text/javascript" src="fetch.js"></script>
+    <script type="text/javascript" src="sha256.js"></script>
+    <script type="text/javascript" src="lib.js"></script>
+<script>
+$("#set-button").onclick = function(event) {
+    event.preventDefault();
+    setDHT($("#dht-form"));
+}
+function setDHT(form) {
+    var values = getValues(form);
+    if (!values.key || !values.value) {
+        return
+    }
+
+    $("#set-button").setAttribute("disabled", true);
+    var options = {
+        method: "PUT",
+        body: values.value
+    }
+    fetch('/api/dht/'+values.key, options).then(function(response){
+        $("#set-button").removeAttribute("disabled");
+        if (!response.ok) {
+            console.log("error in set-button:",response.statusText);
+        }
+        return response.json()
+    })
+    .then(function(data){
+        $("[name='value']").value = '';
+    });
+}
+$("#get-button").onclick = function(event) {
+    event.preventDefault();
+    getDHT($("#dht-form"));
+}
+function getDHT(form) {
+    var values = getValues(form);
+    $("#get-button").setAttribute("disabled", true);
+
+    fetch('/api/dht/'+values.key).then(function(response){
+        $("#get-button").removeAttribute("disabled");
+        return response.json();
+    })
+    .then(function(data){
+        $("[name='value']").value = data.value;
+    });
+}
+$("#hash-button").onclick = function(event) {
+    event.preventDefault();
+    makeHashKey($("#dht-form"));
+}
+function makeHashKey(form) {
+    var values = getValues(form);
+    values.key = sha256(values.value);
+    console.log(values);
+    $("[name='key']").value = values.key;
+}
+</script>
+</body>
+</html>

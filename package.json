@@ -11,6 +11,8 @@
   "dependencies": {
     "big-integer": "^1.6.28",
     "socket.io-client": "<2.0.0",
+    "tiny-sha256": "^1.0.2",
     "whatwg-fetch": "^2.0.4"
-  }
+  },
+  "devDependencies": {}
 }

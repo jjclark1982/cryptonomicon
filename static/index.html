@@ -34,39 +34,53 @@
         .login-box[data-username="null"] > .show-when-logged-in {
             display: none;
         }
+        nav a {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
 
     <h3>Cryptonomicon</h3>
 
-    <p><a href="signature.html">Symmetric Key Cryptography</a></p>
+    <nav>
+        <a href="signature.html">Symmetric Key Cryptography</a>
+        |
+        <a href="rsa.html">Key-pair Cryptography</a>
+        |
+        <a href="feed.html">Message Feed</a>
+        |
+        <a href="dht.html">Distributed Hash Table</a>
+    </nav>
 
-    <p><a href="RSA.html">Key-pair Cryptography</a></p>
+    <hr>
 
-    <p><a href="feed.html">Message Feed</a></p>
-
-    <a href="password.html">Set Password</a>
-
-    <div class="login-box" name="current_username" data-target="data-username" data-username="null">
-        <span class="show-when-logged-out">
-            <a href="login.html">Log In</a>
-        </span>
-        <span class="show-when-logged-in">
-            <span class="current-username">Logged in as <span name="current_username"></span>.</span>
-            <form class="logout-form" style="display:inline" action="/api/logout" method="POST"><button>Log Out</button></form>
-            <span name="total_money"></span>
-        </span>
-    </div>
+    <nav>
+        <a href="password.html">Set Password</a>
+        |
+        <div class="login-box" name="current_username" data-target="data-username" data-username="null">
+            <span class="show-when-logged-out">
+                <a href="login.html">Log In</a>
+            </span>
+            <span class="show-when-logged-in">
+                <span class="current-username">Logged in as <span name="current_username"></span>.</span>
+                <form class="logout-form" style="display:inline" action="/api/logout" method="POST"><button>Log Out</button></form>
+                <span name="total_money"></span>
+            </span>
+        </div>
+    </nav>
 
     <p><a href="cheque.html">Make a transaction</a></p>
 
-    <p>
+    <nav>
         <a href=".">Wallet</a>
+        |
         <a href="?branch=A">Branch A</a>
+        |
         <a href="?branch=B">Branch B</a>
+        |
         <a href="?branch=Q">Branch Q</a>
-    </p>
+    </nav>
 
     <div id="accounts"></div>
 
