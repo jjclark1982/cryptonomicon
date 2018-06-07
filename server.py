@@ -33,10 +33,20 @@ def serve_static(filename='index.html'):
 def update_accounts(transaction=None):
     socketio.emit('accounts_data', {'accounts': accounts})
     socketio.emit('branch_data', {'branches': accounts})
+
+    block = {
+        "branch_data": branches,
+        "prev_link": "/api/cas/"+hash_table.get("branches","")
+    }
+    block_data = json.dumps(block, ensure_ascii=False, sort_keys=True, indent=2)
+    block_key = cas_store(block_data)
+    hash_table["branches"] = block_key
+
     with open('data/accounts.json', 'w') as jsonfile:
         json.dump(accounts, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
     with open('data/branches.json', 'w') as jsonfile:
         json.dump(branches, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
+
     if transaction:
         with open('data/transactions.csv', 'a') as csvfile:
             writer = csv.writer(csvfile)
@@ -172,6 +182,8 @@ def branch_deposit():
 
     branches["Wallet"][account_id]["balance"] -= amount    
     branches[branch_id][account_id]["balance"] += amount    
+
+    update_accounts()
 
     return redirect('/app/?branch='+branch_id, code=302)
  
