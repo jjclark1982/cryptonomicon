@@ -14,9 +14,6 @@
         form label {
             vertical-align: top;
         }
-        form input {
-            width: 30em;
-        }
         form textarea {
             width: 30em;
             height: 3em;
@@ -29,6 +26,12 @@
         }
         pre {
             text-align: left;
+        }
+        .private-key {
+            visibility: hidden
+        }
+        .hide-private-key:checked + .private-key {
+            visibility: visible;
         }
     </style>
 </head>
@@ -58,7 +61,8 @@
             <br>
             <label>
                 Private key <var>d</var>:
-                <input name="d" class="big-num">
+                <input class="hide-private-key" style="float:right" type="checkbox">
+                <input name="d" class="big-num private-key">
             </label>
         </fieldset>
     </form>
@@ -145,7 +149,8 @@ function encodeMessage(form) {
         return RSA.encrypt(char, key.n, key.e);
     });
     values.result = numsToString(cryptext);
-    setValues(form, values);
+    // setValues(form, values);
+    form.querySelector("[name='result']").value = values.result;
 }
 $("#decode-button").onclick = function(event) {
     event.preventDefault();
