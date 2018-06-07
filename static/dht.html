@@ -36,21 +36,38 @@
 
     <h3><a href=".">Cryptonomicon</a> &gt; Distributed Hash Table</h3>
 
-    <form id="dht-form" autocomplete="off">
+    <form id="index-form" autocomplete="off">
         <fieldset>
-            <legend>Distributed Hash Table</legend>
+            <legend>Key-Value Table</legend>
             <label>
                 Key:
                 <input name="key" type="text">
             </label>
             <p style="text-align:center">
-                <button type="button" id="hash-button">↑ Generate Hash ↑</button> &nbsp;
-                <button type="button" id="set-button">↓ Set ↓</button> &nbsp;
-                <button type="button" id="get-button">↓ Get ↓</button>
+                <button type="button" id="index-set-button">↓ Set ↓</button> &nbsp;
+                <button type="button" id="index-get-button">↓ Get ↓</button>
             </p>
             <label>
                 Value:
                 <textarea name="value"></textarea>
+            </label>
+       </fieldset>
+    </form>
+    <br>
+    <form id="content-form" autocomplete="off">
+        <fieldset>
+            <legend>Content-Addressed Table</legend>
+            <label>
+                Data:
+                <textarea name="value"></textarea>
+            </label>
+            <p style="text-align:center">
+                <button type="button" id="content-set-button">↓ Set ↓</button> &nbsp;
+                <button type="button" id="content-get-button">↑ Get ↑</button>
+            </p>
+            <label>
+                Hash:
+                <input name="key" type="text">
             </label>
        </fieldset>
     </form>
@@ -60,9 +77,13 @@
     <script type="text/javascript" src="sha256.js"></script>
     <script type="text/javascript" src="lib.js"></script>
 <script>
-$("#set-button").onclick = function(event) {
+$("#index-set-button").onclick = function(event) {
     event.preventDefault();
-    setDHT($("#dht-form"));
+    setDHT($("#index-form"));
+}
+$("#index-form").onsubmit = function(event) {
+    event.preventDefault();
+    setDHT($("#index-form"));
 }
 function setDHT(form) {
     var values = getValues(form);
@@ -70,47 +91,100 @@ function setDHT(form) {
         return
     }
 
-    $("#set-button").setAttribute("disabled", true);
+    $("#index-set-button").setAttribute("disabled", true);
     var options = {
         method: "PUT",
         body: values.value
     }
     fetch('/api/dht/'+values.key, options).then(function(response){
-        $("#set-button").removeAttribute("disabled");
+        $("#index-set-button").removeAttribute("disabled");
         if (!response.ok) {
-            console.log("error in set-button:",response.statusText);
+            console.log("error in index-set-button:",response.statusText);
         }
         return response.json()
     })
     .then(function(data){
-        $("[name='value']").value = '';
+        form.querySelector("[name='value']").value = '';
     });
 }
-$("#get-button").onclick = function(event) {
+$("#index-get-button").onclick = function(event) {
     event.preventDefault();
-    getDHT($("#dht-form"));
+    getDHT($("#index-form"));
 }
 function getDHT(form) {
     var values = getValues(form);
-    $("#get-button").setAttribute("disabled", true);
+    $("#index-get-button").setAttribute("disabled", true);
 
     fetch('/api/dht/'+values.key).then(function(response){
-        $("#get-button").removeAttribute("disabled");
+        $("#index-get-button").removeAttribute("disabled");
         return response.json();
     })
     .then(function(data){
-        $("[name='value']").value = data.value;
+        form.querySelector("[name='value']").value = data.value;
     });
 }
-$("#hash-button").onclick = function(event) {
-    event.preventDefault();
-    makeHashKey($("#dht-form"));
+
+$("#content-form [name='key']").onchange = function(event) {
+    $("#content-form").querySelector("[name='value']").value = '';
+}
+$("#content-form [name='value']").onkeyup = function(event) {
+    makeHashKey($("#content-form"));
 }
 function makeHashKey(form) {
     var values = getValues(form);
     values.key = sha256(values.value);
-    console.log(values);
-    $("[name='key']").value = values.key;
+    form.querySelector("[name='key']").value = values.key;
+}
+
+$("#content-set-button").onclick = function(event) {
+    event.preventDefault();
+    setCAS($("#content-form"));
+}
+function setCAS(form) {
+    var values = getValues(form);
+    if (!values.key || !values.value) {
+        return
+    }
+
+    $("#content-set-button").setAttribute("disabled", true);
+    var options = {
+        method: "POST",
+        body: values.value
+    }
+    fetch('/api/cas/', options).then(function(response){
+        $("#content-set-button").removeAttribute("disabled");
+        window.lastResponse = response;
+        if (!response.ok) {
+            console.log("error in content-set-button:",response.statusText);
+        }
+        return response.json()
+    })
+    .then(function(data){
+        form.querySelector("[name='key']").value = data.key;
+    });
+}
+$("#content-get-button").onclick = function(event) {
+    event.preventDefault();
+    getCAS($("#content-form"));
+}
+$("#content-form").onsubmit = function(event) {
+    event.preventDefault();
+    getCAS($("#content-form"));
+}
+function getCAS(form) {
+    form.querySelector("[name='value']").value = '';
+    var values = getValues(form);
+    $("#content-get-button").setAttribute("disabled", true);
+
+    fetch('/api/cas/'+values.key).then(function(response){
+        $("#content-get-button").removeAttribute("disabled");
+        if (response.ok) {
+            return response.json();
+        }
+    })
+    .then(function(data){
+        form.querySelector("[name='value']").value = data.value;
+    });
 }
 </script>
 </body>

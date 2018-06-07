@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from flask import Flask, session, request, render_template, jsonify, redirect, send_from_directory
 from flask_cors import CORS
@@ -219,19 +220,58 @@ hash_table = {}
 
 @app.route('/api/dht/<path:key>', methods=["GET", "PUT"])
 def dht_value(key):
+    key = key.strip()
     if request.method == "PUT":
         value = str(request.data.decode("utf-8", "strict"))
         hash_table[key] = value
     if request.method == "GET":
-        value = hash_table[key]
+        value = hash_table.get(key)
     with open('data/hash_table.json', 'w') as jsonfile:
         json.dump(hash_table, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
-    return jsonify({"value":value})
+    return jsonify({"key":key, "value":value})
 
 @app.route('/api/dht', methods=["GET"])
 def dht_dump():
     return jsonify(hash_table)
 
+
+content_table = {}
+
+def cas_store(value):
+    key = get_hash(value)
+    content_table[key] = value
+    with open('data/content_table.json', 'w') as jsonfile:
+        json.dump(content_table, jsonfile, ensure_ascii=False, sort_keys=True, indent=2)
+    return key
+
+@app.route('/api/cas/<path:key>', methods=["GET", "PUT"])
+def cas_value(key):
+    if request.method == "PUT":
+        value = str(request.data.decode("utf-8", "strict"))
+        cas_store(value)
+        return jsonify({"key":key, "value":value})
+    if request.method == "GET":
+        value = content_table.get(key)
+        best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+        if best == 'application/json':
+            return jsonify({"key":key, "value":value})
+        else:
+            return linkify(str(value))
+
+def linkify(text):
+    text = re.sub(r'(/api/cas/\w*)', '<a href="\\1">\\1</a>', text)
+    return text
+
+@app.route('/api/cas/', methods=["POST"])
+def cas_create():
+    value = request.data.decode("utf-8", "strict")
+    key = get_hash(value)
+    content_table[key] = value
+    return jsonify({"key": key, "value": value})
+
+@app.route('/api/cas', methods=["GET"])
+def cas_dump():
+    return jsonify(content_table)
 
 # streaming API
 
@@ -262,6 +302,10 @@ if __name__ == '__main__':
         hash_table = json.load(open('data/hash_table.json'))
     except FileNotFoundError:
         hash_table = {}
+    try:
+        content_table = json.load(open('data/content_table.json'))
+    except FileNotFoundError:
+        content_table = {}
     socketio.run(app, host='0.0.0.0', port=int((os.environ.get("PORT", "9000"))))
 
 print(accounts)
