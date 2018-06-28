@@ -59,6 +59,13 @@ def normalize(acct_id):
     acct_id = acct_id[:32]
     return acct_id
 
+def normalize_branch(branch_id):
+    branch_id = str(branch_id)
+    branch_id = re.sub(r'\s+', ' ', branch_id);
+    branch_id = branch_id.strip()
+    branch_id = branch_id.capitalize()
+    return branch_id
+
 def get_hash(password):
     passhash = hashlib.sha256(password.encode('utf-8'))
     return passhash.hexdigest()
@@ -69,6 +76,7 @@ def get_hash(password):
 def login():
     username = request.form['username']
     password = request.form['password']
+    print([request.remote_addr, "logged in", username])
     if username not in branches["Wallet"]:
         return "Error: no such user "+username
 
@@ -104,7 +112,7 @@ def total_money():
     for branch in branches.values():
         for account in branch.values():
             if username == None or account["id"] == username:
-                total += account["balance"]
+                total += float(account["balance"])
 
     return "Total: "+str(total)+" ¤"
 
@@ -118,7 +126,7 @@ def set_password():
 
     branches["Wallet"][acct]["password"] = get_hash(password)
 
-    update_accounts(["changed password for "+acct])
+    update_accounts([request.remote_addr, "changed password for "+acct])
     return redirect('/app/', code=302)
 
 
@@ -151,18 +159,17 @@ def send_cheque():
     branches["Wallet"][from_acct]['balance'] -= amount
     branches["Wallet"][to_acct]['balance'] += amount
 
-    update_accounts([from_acct, to_acct, amount])
-    # TODO: include originating IP address and authorization signature
+    update_accounts([request.remote_addr, "sent cheque", from_acct, to_acct, amount])
 
     return redirect('/app/', code=302)
 
 @app.route('/api/branch_deposit', methods=["POST"])
 def branch_deposit():
     account_id = session['username']
-    branch_id = request.form['branch_id']
+    branch_id = normalize_branch(request.form['branch_id'])
     amount = float(request.form['amount'])
 
-    if not account_id:
+    if account_id is None:
         return "Error: you must be logged in"
 
     if amount < 0:
@@ -183,14 +190,14 @@ def branch_deposit():
     branches["Wallet"][account_id]["balance"] -= amount    
     branches[branch_id][account_id]["balance"] += amount    
 
-    update_accounts()
+    update_accounts([request.remote_addr, "made a deposit", account_id, branch_id, amount])
 
     return redirect('/app/?branch='+branch_id, code=302)
  
 @app.route('/api/branch_withdrawl', methods=["POST"])
 def branch_withdrawl():
     account_id = session['username']
-    branch_id = request.form['branch_id']
+    branch_id = normalize_branch(request.form['branch_id'])
     amount = float(request.form['amount'])
 
     if not account_id:
@@ -216,7 +223,7 @@ def branch_withdrawl():
 
 @app.route('/api/accounts')
 def get_accounts():
-    branch_id = request.args.get('branch', 'Wallet')
+    branch_id = normalize_branch(request.args.get('branch', 'Wallet'))
     if branch_id:
         return jsonify(branches.get(branch_id, {}))
     else:
@@ -224,7 +231,21 @@ def get_accounts():
 
 @app.route('/api/branches')
 def get_branches():
-    return jsonify(branches)
+    best = request.accept_mimetypes.best_match(['application/json', 'text/html'])
+    if best == 'application/json':
+        return jsonify(branches)
+    else:
+        html = '<html><ul>'
+        branch_ids = {}
+        for key in branches.keys():
+            branch_id = normalize_branch(key)
+            branch_ids[branch_id] = True
+        # branch_ids = list(branch_ids.keys()).sort()
+        branch_ids = list(branch_ids.keys())
+        branch_ids.sort()
+        for branch_id in branch_ids:
+            html += '<li><a href="/app/?branch={}">{}</a></li>'.format(branch_id,branch_id or '(none)')
+        return html
  
 # DHT API
 
@@ -236,6 +257,8 @@ def dht_value(key):
     if request.method == "PUT":
         value = str(request.data.decode("utf-8", "strict"))
         hash_table[key] = value
+        if key == 'branches':
+            reset_branches(value)
     if request.method == "GET":
         value = hash_table.get(key)
     with open('data/hash_table.json', 'w') as jsonfile:
@@ -246,6 +269,15 @@ def dht_value(key):
 def dht_dump():
     return jsonify(hash_table)
 
+def reset_branches(value):
+    if value in content_table:
+        global branches
+        global accounts
+        branch_json = content_table[value]
+        branch_data = json.loads(branch_json)['branch_data']
+        branches = branch_data
+        accounts = branches['Wallet']
+        update_accounts([request.remote_addr, "reset blockchain", value])
 
 content_table = {}
 
@@ -285,6 +317,22 @@ def cas_create():
 def cas_dump():
     return jsonify(content_table)
 
+@app.route('/api/blockchain')
+def get_blockchain():
+    key = hash_table['branches']
+    return redirect('/api/cas/'+key, 302)
+
+@app.route('/api/reset_blockchain', methods=["POST"])
+def reset_blockchain():
+    global branches
+    global accounts
+    new_hash = request.form['hash']
+    if new_hash in content_table:
+        reset_branches(new_hash)
+        return redirect("/app/", code=302)
+    else:
+        return "Error: new hash is not in content-addressed storage table"
+
 # streaming API
 
 @socketio.on('new_client')
@@ -319,5 +367,3 @@ if __name__ == '__main__':
     except FileNotFoundError:
         content_table = {}
     socketio.run(app, host='0.0.0.0', port=int((os.environ.get("PORT", "9000"))))
-
-print(accounts)

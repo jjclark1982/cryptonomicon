@@ -51,6 +51,8 @@
         <a href="feed.html">Message Feed</a>
         |
         <a href="dht.html">Distributed Hash Table</a>
+        |
+        <a href="/api/blockchain">Blockchain</a>
     </nav>
 
     <hr>
@@ -70,16 +72,14 @@
         </div>
     </nav>
 
-    <p><a href="cheque.html">Make a transaction</a></p>
+    <br>
 
     <nav>
         <a href=".">Wallet</a>
         |
-        <a href="?branch=A">Branch A</a>
+        <a href="/api/branches">Branches</a>
         |
-        <a href="?branch=B">Branch B</a>
-        |
-        <a href="?branch=Q">Branch Q</a>
+        <a href="cheque.html">Make a transaction</a>
     </nav>
 
     <div id="accounts"></div>
@@ -121,12 +121,18 @@ function normalize_branch_id(branch_id) {
 var branch_id = parseQuery(document.location.search).branch || "Wallet";
 setValues(document.body, {branch_id: normalize_branch_id(branch_id)});
 
+function normalize_acct(acct_id) {
+    acct_id = acct_id.replace(/\s+/,'')
+    acct_id = acct_id.replace(/[^0-9a-zA-Z]/,'')
+    return acct_id
+}
+
 function renderAccount(account) {
-    var row = $("[data-account-id='"+account.id+"']");
+    var row = $("[data-account-id='"+normalize_acct(account.id)+"']");
     if (!row) {
         var table = $("#accounts>table");
         var row = render($('#account-template'), {});
-        row.setAttribute('data-account-id', account.id);
+        row.setAttribute('data-account-id', normalize_acct(account.id));
         table.appendChild(row);
     }
     setValues(row, account);

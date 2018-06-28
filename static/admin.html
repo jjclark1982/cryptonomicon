@@ -2,8 +2,29 @@
 <html>
 <head>
     <title>Admin</title>
+<style>
+form {
+    display: inline-block;
+}
+</style>
 </head>
 <body>
-    <a href="password.html">Set Password</a>
 
-<form action="/api/reload_database" method="POST"><button type="submit">Reload Database</button></form>
+<p><a href="password.html">Set Password</a></p>
+
+<form action="/api/reload_database" method="POST">
+    <fieldset>
+        <legend>Reload Database from Disk</legend>
+        <button type="submit">Reload Database</button>
+    </fieldset>
+</form>
+
+<br><br>
+
+<form action="/api/reset_blockchain" method="POST">
+    <fieldset>
+        <legend>Reload Database from Blockchain</legend>
+        <input type="text" name="hash">
+        <button type="submit">Fork</button>
+    </fieldset>
+</form>
