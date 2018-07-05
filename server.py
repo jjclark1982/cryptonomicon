@@ -72,22 +72,31 @@ def get_hash(password):
 
 # RPC API
 
-secret_code = ''
-@app.route('/api/secret', methods=["GET", "POST"])
+secret_code = 'easnutm'
+
+@app.route('/api/secret', methods=["POST"])
 def handle_secret_code():
     global secret_code
-    code = request.args.get('code')
+    code = request.form.get('code')
     if not code:
-        return "Error: query parameter 'code' was not submitted"
+        return "Error: query parameter 'code' was not submitted", 401
+    if len(code) != len(secret_code):
+        return "Access Denied: code is the wrong length", 401
+    i = 0
+    while i < len(secret_code):
+        if code[i] != secret_code[i]:
+            return "Access denied: code is incorrect at index "+str(i), 401
+        i = i + 1
     if code != secret_code:
-        return "Acces denied: submitted code was incorrect"
-    if request.method == "GET":
-        return "Access granted"
-    elif request.method == "POST":
-        new_code = request.args.get('new_code')
-        if not new_code:
-            return "Error: query parameter 'new_code' was not submitted"
-        secret_code = new_code
+        return "Access denied: submitted code was incorrect", 401
+    return "Access granted", 200
+
+
+
+    # new_code = request.form.get('new_code')
+    # if not new_code:
+    #     return "Error: query parameter 'new_code' was not submitted"
+    # secret_code = new_code
 
 @app.route('/api/login', methods=["POST"])
 def login():

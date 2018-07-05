@@ -10,29 +10,178 @@
     legend {
         text-align: center;
     }
+    #form-result {
+        font-weight: bold;
+    }
+    #form-result.error {
+        color: red;
+    }
     </style>
 </head>
 <body>
 
     <h3><a href=".">Cryptonomicon</a> &gt; Timing-Channel Attack</h3>
 
-    <form id="secret_code_form" action="/api/secret" method="POST">
+    <form id="code_form" action="/api/secret" method="POST" autocomplete="off">
         <fieldset>
-            <legend>Change Secret Code</legend>
-            <label>Code: <input name="code"></label>
+            <legend>Check Secret Code</legend>
+            <label>Code: <input id="code_input" name="code"></label>
             <br>
-            <label>New Code: <input name="code"></label>
+            <!--<label>New Code: <input name="new_code"></label>-->
             <br>
-            <button type="submit">Submit</button>
+            <button id="submit_button" type="submit">Submit</button>
         </fieldset>
     </form>
+    <div id="form-result"></div>
 
 <script type="text/javascript" src="socket.io.min.js"></script>
 <script type="text/javascript" src="fetch.js"></script>
 <script type="text/javascript" src="lib.js"></script>
 <script>
-$("#secret_code_form").onsumbit = function(event) {
+$("#code_form").onsubmit = function(event) {
+    event.preventDefault();
+    submitCodeForm(event.target);
+};
+function submitCodeForm(form, callback) {
+    if (!form) {
+        form = $("#code_form");
+    }
+    $("#submit_button").disabled = true;
+    $("#form-result").innerHTML = '';
+    var values = getValues(form);
+    var data = new URLSearchParams();
+    for (var pair of new FormData(form)) {
+        data.append(pair[0], pair[1]);
+    }
+    var options = {
+        method: form.method,
+        body: data
+    }
+    fetch(form.action, options).then(function(response){
+        $("#submit_button").removeAttribute("disabled");
+        if (!response.ok) {
+            // console.log("error in submit:",response.statusText);
+        }
+        return response.text();
+    })
+    .then(function(text){
+        if (callback) {
+            callback(text);
+        }
+        $("#form-result").innerHTML = text;
+    });
+}
+function tryCode(code, callback) {
+    $("#code_input").value = code;
+    submitCodeForm(false, function(text){
+        if (callback) {
+            callback(code, text);
+        }
+    });
+}
 
+/* userspace functions */
+
+function buildCode(knownLetters, tryLetter, totalLength) {
+  var code = knownLetters + tryLetter;
+  while (code.length < totalLength) {
+    code += '-';
+  }
+  return code;
+}
+
+function findLength() {
+    var correctLength;
+    var maybeCode = ''
+    for (var len = 1; len < 20; len++) {
+        maybeCode += '-';
+        tryCode(maybeCode, function(code, response){
+            if (response != "Access Denied: code is the wrong length") {
+                correctLength = code.length;
+                console.log(correctLength);
+            }
+        })
+    }
+}
+
+function findNextLetter(knownLetters, correctLength) {
+  var letters = 'abcdefghijklmnopqrstuvwxyz'
+  var N = knownLetters.length;
+  var foundLetter = '';
+  for (var letter of letters) {
+    var maybeCode = buildCode(knownLetters, letter, correctLength)
+    tryCode(maybeCode, function(code, response){
+      if (response != "Access denied: code is incorrect at index "+N) {
+        foundLetter = code[N]
+        console.log("letter "+N+" = "+foundLetter)
+      }
+    })
+  }
+}
+
+var measurements = [];
+function checkLength(len) {
+    if (len > 20) {
+        return;
+    }
+    measurements[len] = measurements[len] || [];
+    var maybeCode = buildCode('','', len);
+    var startTime = performance.now()
+    tryCode(maybeCode, function(code){
+        var endTime = performance.now();
+        measurements[len].push(endTime-startTime)
+        checkLength(len+1)
+    });
+}
+function findLength() {
+    var correctLength;
+    var maybeCode = ''
+    for (var len = 1; len < 20; len++) {
+        maybeCode += '-';
+        (function(){
+        var startTime = performance.now()
+        tryCode(maybeCode, function(code){
+            var endTime = performance.now();
+            console.log(code, endTime-startTime);
+        })
+        })()
+    }
+}
+
+function averages(arr1) {
+    var arr2 = []
+    for (var i in arr1) {
+        var sum = 0.0;
+        for (var j in arr1[i]) {
+            sum += arr1[i][j]
+        }
+        arr2[i] = sum / arr1[i].length;
+    }
+    return arr2;
+}
+
+function differences(arr1) {
+    var arr2 = []
+    for (var i = 1; i < arr1.length; i++) {
+        arr2[i-1] = arr1[i-1] - arr1[i]
+    }
+    return arr2;
+}
+
+function maxIndex(arr, start) {
+    var highestValue = -Infinity;
+    var highestIndex = 0;
+    for (var i = start; i < arr.length; i++) {
+        if (arr[i] > highestValue) {
+            highestValue = arr[i];
+            highestIndex = i;
+        }
+    }
+    return highestIndex;
+}
+
+function figureCorrectLength(measurements) {
+    return maxIndex(differences(averages(measurements)), 1) + 1;
 }
 
 </script>
