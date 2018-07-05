@@ -72,6 +72,23 @@ def get_hash(password):
 
 # RPC API
 
+secret_code = ''
+@app.route('/api/secret', methods=["GET", "POST"])
+def handle_secret_code():
+    global secret_code
+    code = request.args.get('code')
+    if not code:
+        return "Error: query parameter 'code' was not submitted"
+    if code != secret_code:
+        return "Acces denied: submitted code was incorrect"
+    if request.method == "GET":
+        return "Access granted"
+    elif request.method == "POST":
+        new_code = request.args.get('new_code')
+        if not new_code:
+            return "Error: query parameter 'new_code' was not submitted"
+        secret_code = new_code
+
 @app.route('/api/login', methods=["POST"])
 def login():
     username = request.form['username']

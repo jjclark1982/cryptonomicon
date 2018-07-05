@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+    <title>Cryptonomicon</title>
+    <style>
+    form {
+        display: inline-block;
+        text-align: right;
+    }
+    legend {
+        text-align: center;
+    }
+    </style>
+</head>
+<body>
+
+    <h3><a href=".">Cryptonomicon</a> &gt; Timing-Channel Attack</h3>
+
+    <form id="secret_code_form" action="/api/secret" method="POST">
+        <fieldset>
+            <legend>Change Secret Code</legend>
+            <label>Code: <input name="code"></label>
+            <br>
+            <label>New Code: <input name="code"></label>
+            <br>
+            <button type="submit">Submit</button>
+        </fieldset>
+    </form>
+
+<script type="text/javascript" src="socket.io.min.js"></script>
+<script type="text/javascript" src="fetch.js"></script>
+<script type="text/javascript" src="lib.js"></script>
+<script>
+$("#secret_code_form").onsumbit = function(event) {
+
+}
+
+</script>
+</body>
+</html>
